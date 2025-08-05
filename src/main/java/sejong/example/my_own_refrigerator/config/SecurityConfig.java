@@ -19,7 +19,9 @@
                 "/login",
                 "/auth/login/kakao",
                 "/auth/login/kakao/**",
-                "/login/oauth2/**"
+                "/login/oauth2/**",
+                "/auth/logout/kakao",
+                "/auth/logout/kakao/**"
         };
 
         @Bean

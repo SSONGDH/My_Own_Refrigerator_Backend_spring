@@ -23,7 +23,7 @@ public class AuthController {
     @Value("${kakao.client.id}")
     private String clientId;  // application.properties에 설정된 값 주입
 
-    @Value("${kakao.redirect.uri}")
+    @Value("${kakao.redirect.login.uri}")
     private String redirectUri;  // application.properties에 설정된 값 주입
 
     @GetMapping("/auth/login/kakao")

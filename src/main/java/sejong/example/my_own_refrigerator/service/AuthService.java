@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -17,17 +18,18 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import org.springframework.web.client.RestTemplate;
-import jakarta.servlet.http.HttpServletResponse;
-import sejong.example.my_own_refrigerator.config.KakaoAuthProperties;
 
 import java.io.IOException;
-
 
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final KakaoAuthProperties kakaoAuthProperties;
+    @Value("${kakao.client.id}")
+    private String clientId;
+
+    @Value("${kakao.redirect.login.uri}")
+    private String redirectUri;
 
     public String getKakaoAccessToken(String code) throws IOException {
         RestTemplate restTemplate = new RestTemplate();
@@ -37,8 +39,8 @@ public class AuthService {
 
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("grant_type", "authorization_code");
-        params.add("client_id", kakaoAuthProperties.getClient());
-        params.add("redirect_uri", kakaoAuthProperties.getRedirect());
+        params.add("client_id", clientId);
+        params.add("redirect_uri", redirectUri);
         params.add("code", code);
 
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
@@ -49,7 +51,6 @@ public class AuthService {
                 String.class
         );
 
-        // 응답 바디 출력 (로그 찍기)
         System.out.println("카카오 토큰 응답: " + response.getBody());
 
         ObjectMapper objectMapper = new ObjectMapper();
@@ -61,7 +62,7 @@ public class AuthService {
         RestTemplate restTemplate = new RestTemplate();
 
         HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(accessToken);  // Bearer 토큰 인증 헤더 설정
+        headers.setBearerAuth(accessToken);
 
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
@@ -76,4 +77,3 @@ public class AuthService {
         return objectMapper.readTree(response.getBody());
     }
 }
-

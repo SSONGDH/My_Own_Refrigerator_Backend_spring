@@ -1,26 +1,42 @@
-    package sejong.example.my_own_refrigerator.service;
+package sejong.example.my_own_refrigerator.service;
 
-    import org.springframework.http.HttpEntity;
-    import org.springframework.http.HttpHeaders;
-    import org.springframework.http.ResponseEntity;
-    import org.springframework.stereotype.Service;
-    import org.springframework.web.client.RestTemplate;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestTemplate;
 
-    @Service
-    public class KakaoLogoutService {
+@Service
+public class KakaoLogoutService {
 
-        public boolean logout(String accessToken) {
-            String url = "https://kapi.kakao.com/v1/user/logout";
+    @Value("${kakao.client.id}")
+    private String clientId;
 
-            RestTemplate restTemplate = new RestTemplate();
-            HttpHeaders headers = new HttpHeaders();
-            headers.setBearerAuth(accessToken);
+    @Value("${kakao.redirect.logout.uri}")
+    private String redirectUri;
 
-            HttpEntity<String> entity = new HttpEntity<>(headers);
+    public boolean logout(String accessToken) {
+        String url = "https://kapi.kakao.com/v1/user/logout";
 
+        RestTemplate restTemplate = new RestTemplate();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        try {
             ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
-
-            // 상태 코드 200이면 성공
             return response.getStatusCode().is2xxSuccessful();
+        } catch (HttpClientErrorException e) {
+            return false;
+        } catch (Exception e) {
+            return false;
         }
     }
+
+    public String getLogoutRedirectUrl() {
+        return "https://kauth.kakao.com/oauth/logout?client_id=" + clientId + "&logout_redirect_uri=" + redirectUri;
+    }
+}
