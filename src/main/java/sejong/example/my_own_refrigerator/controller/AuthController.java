@@ -1,60 +1,49 @@
 package sejong.example.my_own_refrigerator.controller;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import sejong.example.my_own_refrigerator.service.AuthService;
 
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("")
+@RequestMapping("/auth")
 public class AuthController {
 
     private final AuthService authService;
 
-    @Value("${kakao.client.id}")
-    private String clientId;  // application.properties에 설정된 값 주입
+    // application.properties에서 주입받으려면 @Value 사용
+    @org.springframework.beans.factory.annotation.Value("${kakao.client.id}")
+    private String clientId;
 
-    @Value("${kakao.redirect.login.uri}")
-    private String redirectUri;  // application.properties에 설정된 값 주입
+    @org.springframework.beans.factory.annotation.Value("${kakao.redirect.login.uri}")
+    private String redirectUri;
 
-    @GetMapping("/auth/login/kakao")
-    public Object kakaoLogin(@RequestParam(value = "code", required = false) String accessCode,
-                             HttpServletResponse response) throws IOException {
-
-        if (accessCode == null || accessCode.isEmpty()) {
-            // code 파라미터 없으면 카카오 인증 URL로 리다이렉트 (prompt=login 추가)
+    /**
+     * 카카오 로그인 처리 엔드포인트
+     * code 파라미터 없으면 카카오 로그인 페이지로 리다이렉트
+     * code 있으면 토큰 발급 후 반환
+     */
+    @GetMapping("/login/kakao")
+    public void kakaoLogin(@RequestParam(value = "code", required = false) String code,
+                           HttpServletResponse response) throws IOException {
+        if (code == null || code.isEmpty()) {
+            // 인가 코드 없으면 카카오 로그인 URL로 리다이렉트
             String kakaoAuthUrl = "https://kauth.kakao.com/oauth/authorize"
                     + "?response_type=code"
                     + "&client_id=" + clientId
                     + "&redirect_uri=" + redirectUri
-                    + "&prompt=login";
-
+                    + "&prompt=login";  // 강제 로그인 화면 표시 옵션
             response.sendRedirect(kakaoAuthUrl);
-            return null; // 리다이렉트 했으므로 종료
+            return;
         }
 
-        try {
-            // code 파라미터가 있으면 토큰 발급 및 유저정보 조회
-            String accessToken = authService.getKakaoAccessToken(accessCode);
-            JsonNode userInfo = authService.getKakaoUserInfo(accessToken);
-
-            String kakaoId = userInfo.get("id").asText();
-            String nickname = userInfo.get("properties").get("nickname").asText();
-
-            // TODO: 회원 가입 또는 로그인 처리
-
-            return ResponseEntity.ok("카카오 ID: " + kakaoId + ", 닉네임: " + nickname);
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("카카오 로그인 실패: " + e.getMessage());
-        }
+        // code가 있으면 토큰 발급
+        String accessToken = authService.getKakaoAccessToken(code);
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write("{\"accessToken\":\"" + accessToken + "\"}");
     }
 }
