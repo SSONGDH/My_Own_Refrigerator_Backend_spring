@@ -1,49 +1,47 @@
 package sejong.example.my_own_refrigerator.controller;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import sejong.example.my_own_refrigerator.service.AuthService;
 
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("/auth")
+@RequiredArgsConstructor
+@Slf4j
 public class AuthController {
 
     private final AuthService authService;
 
-    // application.properties에서 주입받으려면 @Value 사용
-    @org.springframework.beans.factory.annotation.Value("${kakao.client.id}")
-    private String clientId;
+    @PostMapping("/login/kakao")
+    public ResponseEntity<?> loginWithKakao(
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader
+    ) throws IOException {
+        log.info("📌 /auth/login/kakao 요청 들어옴");
+        log.info("Authorization 헤더: {}", authorizationHeader);
 
-    @org.springframework.beans.factory.annotation.Value("${kakao.redirect.login.uri}")
-    private String redirectUri;
-
-    /**
-     * 카카오 로그인 처리 엔드포인트
-     * code 파라미터 없으면 카카오 로그인 페이지로 리다이렉트
-     * code 있으면 토큰 발급 후 반환
-     */
-    @GetMapping("/login/kakao")
-    public void kakaoLogin(@RequestParam(value = "code", required = false) String code,
-                           HttpServletResponse response) throws IOException {
-        if (code == null || code.isEmpty()) {
-            // 인가 코드 없으면 카카오 로그인 URL로 리다이렉트
-            String kakaoAuthUrl = "https://kauth.kakao.com/oauth/authorize"
-                    + "?response_type=code"
-                    + "&client_id=" + clientId
-                    + "&redirect_uri=" + redirectUri
-                    + "&prompt=login";  // 강제 로그인 화면 표시 옵션
-            response.sendRedirect(kakaoAuthUrl);
-            return;
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            log.warn("❌ Authorization 헤더가 유효하지 않음");
+            return ResponseEntity.badRequest().body("유효한 Authorization 헤더가 필요합니다.");
         }
 
-        // code가 있으면 토큰 발급
-        String accessToken = authService.getKakaoAccessToken(code);
-        response.setContentType("application/json;charset=UTF-8");
-        response.getWriter().write("{\"accessToken\":\"" + accessToken + "\"}");
+        // "Bearer " 제거 후 실제 Access Token 추출
+        String accessToken = authorizationHeader.substring(7);
+        log.info("Access Token 추출됨: {}", accessToken);
+
+        String token = authService.loginWithKakao(accessToken);
+
+        // 로그인 성공 응답 (예: 토큰 반환)
+        Map<String, String> response = new HashMap<>();
+        response.put("accessToken", token);
+
+        log.info("✅ 로그인 성공, 응답 반환");
+
+        return ResponseEntity.ok(response);
     }
 }

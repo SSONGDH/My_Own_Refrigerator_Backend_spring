@@ -18,6 +18,4 @@ public class UserEntity {
     private String kakaoId;
 
     private String nickname;
-
-    private String kakaoAccessToken;
 }
