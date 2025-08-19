@@ -38,7 +38,7 @@ public class AuthController {
 
         // 로그인 성공 응답 (예: 토큰 반환)
         Map<String, String> response = new HashMap<>();
-        response.put("accessToken", token);
+        response.put("JWT Token", token);
 
         log.info("✅ 로그인 성공, 응답 반환");
 

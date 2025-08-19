@@ -28,12 +28,12 @@ public class IngredientEntity {
     @Enumerated(EnumType.STRING)
     @Builder.Default
     @Column(nullable = false)
-    private Source source = Source.SYSTEM; // 기본 제공 데이터 or 유저 등록 데이터
+    private Source source = Source.system; // 기본 제공 데이터 or 유저 등록 데이터
 
     @Column(name = "author_id")
     private Long authorId; // 유저가 등록한 경우 (User 테이블 참조 예정)
 
     public enum Source {
-        SYSTEM, USER
+        system, USER
     }
 }
