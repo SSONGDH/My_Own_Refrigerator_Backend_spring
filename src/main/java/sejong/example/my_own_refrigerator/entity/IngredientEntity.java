@@ -34,6 +34,6 @@ public class IngredientEntity {
     private Long authorId; // 유저가 등록한 경우 (User 테이블 참조 예정)
 
     public enum Source {
-        system, USER
+        system, user
     }
 }
